@@ -7,6 +7,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/clothes")
 public class PrendaController {
@@ -19,13 +21,19 @@ public class PrendaController {
     }
 
     @GetMapping("")
-    public ResponseEntity<?> getPrendas(){
-        return new ResponseEntity<>(prendaService.getPrendas(), HttpStatus.OK);
+    public ResponseEntity<?> getPrendas(@RequestParam(required = false, defaultValue = "") String nombre){
+        List<PrendaDTO> prendaDTOList= nombre==null ? prendaService.getPrendas() : prendaService.getPrendasContainsNombre(nombre);
+        return new ResponseEntity<>(prendaDTOList, HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getPrendaById(@PathVariable Long id){
         return new ResponseEntity<>(prendaService.getPrendaById(id), HttpStatus.OK);
+    }
+
+    @GetMapping("/size/{size}")
+    public ResponseEntity<?> getPrendaByTalla(@PathVariable String size){
+        return new ResponseEntity<>(prendaService.getPrendasByTalla(size), HttpStatus.OK);
     }
 
     @PutMapping("/{id}")
