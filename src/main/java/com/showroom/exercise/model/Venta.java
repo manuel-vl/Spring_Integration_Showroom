@@ -13,7 +13,7 @@ import java.util.Set;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
+@Entity(name = "ventas")
 @Table(name = "ventas")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Venta {
@@ -24,6 +24,18 @@ public class Venta {
     Double total;
     @Column(name = "medio_pago")
     String medioPago;
-    @OneToMany(mappedBy = "venta")
+    @OneToMany(mappedBy = "venta", cascade = CascadeType.ALL)
     Set<Prenda> prendas;
+
+    public Venta(Set<Prenda> prendas){
+        this.prendas=prendas;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((numero == null) ? 0 : numero.hashCode());
+        return result;
+    }
 }

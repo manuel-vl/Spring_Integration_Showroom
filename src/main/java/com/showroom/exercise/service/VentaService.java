@@ -1,5 +1,6 @@
 package com.showroom.exercise.service;
 
+import com.showroom.exercise.dto.PrendaDTO;
 import com.showroom.exercise.dto.ResponseDTO;
 import com.showroom.exercise.dto.VentaDTO;
 import com.showroom.exercise.exceptions.NotFoundException;
@@ -9,6 +10,8 @@ import com.showroom.exercise.repository.IVentaRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,8 +27,14 @@ public class VentaService implements IVentaService {
 
     @Override
     public VentaDTO saveVenta(VentaDTO ventaDTO) {
-        ventaRepository.save(mapper.map(ventaDTO, Venta.class));
-        return ventaDTO;
+        Venta venta=mapper.map(ventaDTO, Venta.class);
+
+        // A cada prenda, le seteamos su venta
+        venta.getPrendas().forEach(prenda -> prenda.setVenta(venta));
+
+        Venta newVenta=ventaRepository.save(venta);
+
+        return mapper.map(newVenta, VentaDTO.class);
     }
 
     @Override
@@ -40,6 +49,7 @@ public class VentaService implements IVentaService {
         return mapper.map(venta, VentaDTO.class);
     }
 
+    // TODO: REVIEW, INSERTA UN NUEVO PRODUCTO PERO NO LO ACTUALIZA
     @Override
     public VentaDTO updateVenta(Long number, VentaDTO ventaDTO) {
         Venta venta=ventaRepository.findById(number).orElseThrow(()-> new NotFoundException("Venta no encontrada"));
@@ -47,8 +57,9 @@ public class VentaService implements IVentaService {
         if(ventaDTO.getFecha()!=null) venta.setFecha(ventaDTO.getFecha());
         if(ventaDTO.getTotal()!=null) venta.setTotal(ventaDTO.getTotal());
         if(ventaDTO.getMedioPago()!=null) venta.setMedioPago(ventaDTO.getMedioPago());
-        if(ventaDTO.getPrendas()!=null) venta.setPrendas(ventaDTO.getPrendas().stream()
-                .map(p -> mapper.map(p, Prenda.class)).collect(Collectors.toSet()));
+        if(ventaDTO.getPrendas()!=null) venta.setPrendas(ventaDTO.getPrendas()
+                .stream().map(prendaDTO->mapper.map(prendaDTO, Prenda.class))
+                .collect(Collectors.toSet()));
 
         Venta savedVenta = ventaRepository.save(venta);
 
@@ -61,4 +72,22 @@ public class VentaService implements IVentaService {
         ventaRepository.deleteById(number);
         return new ResponseDTO("Venta eliminada correctamente");
     }
+
+    @Override
+    public List<VentaDTO> getVentasByDate(String date) {
+        LocalDate searchDate=LocalDate.parse(date, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        System.out.println("---------searchdaTE-----" +searchDate);
+        List<Venta> ventaList=ventaRepository.findAll();
+
+        return ventaList.stream()
+                .filter(venta -> venta.getFecha().equals(searchDate))
+                .map(venta -> mapper.map(venta, VentaDTO.class))
+                .toList();
+    }
+
+    @Override
+    public List<PrendaDTO> getPrendasFromVentaById(Long number) {
+        return ventaRepository.findPrendasFromVentaId(number).stream().map(prenda -> mapper.map(prenda, PrendaDTO.class)).toList();
+    }
+
 }
